@@ -56,6 +56,7 @@ class FluxControlNetModel(ModelMixin, ConfigMixin, PeftAdapterMixin):
         axes_dims_rope: List[int] = [16, 56, 56],
         num_mode: int = None,
         conditioning_embedding_channels: int = None,
+        extra_condition_channels: int = 1 * 4,
     ):
         super().__init__()
         self.out_channels = in_channels
@@ -111,10 +112,14 @@ class FluxControlNetModel(ModelMixin, ConfigMixin, PeftAdapterMixin):
             self.input_hint_block = ControlNetConditioningEmbedding(
                 conditioning_embedding_channels=conditioning_embedding_channels, block_out_channels=(16, 16, 16, 16)
             )
-            self.controlnet_x_embedder = torch.nn.Linear(in_channels, self.inner_dim)
+            self.controlnet_x_embedder = zero_module(
+                torch.nn.Linear(in_channels + extra_condition_channels, self.inner_dim)
+            )
         else:
             self.input_hint_block = None
-            self.controlnet_x_embedder = zero_module(torch.nn.Linear(in_channels, self.inner_dim))
+            self.controlnet_x_embedder = zero_module(
+                torch.nn.Linear(in_channels + extra_condition_channels, self.inner_dim)
+            )
 
         self.gradient_checkpointing = False
 
