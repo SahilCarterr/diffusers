@@ -1149,13 +1149,6 @@ class StableDiffusionControlNetPAGImg2ImgPipeline(
             clip_skip=self.clip_skip,
         )
         
-        if self.do_perturbed_attention_guidance:
-            prompt_embeds = self._prepare_perturbed_attention_guidance(
-                prompt_embeds, negative_prompt_embeds, self.do_classifier_free_guidance
-            )
-        elif self.do_classifier_free_guidance:
-            prompt_embeds = torch.cat([negative_prompt_embeds, prompt_embeds])
-
          # 3.2 Encode ip_adapter_image
         if ip_adapter_image is not None or ip_adapter_image_embeds is not None:
             ip_adapter_image_embeds = self.prepare_ip_adapter_image_embeds(
@@ -1269,10 +1262,18 @@ class StableDiffusionControlNetPAGImg2ImgPipeline(
             control_images[i] = single_image
 
         control_image = control_images if isinstance(control_image, list) else control_images[0]
+        if self.do_perturbed_attention_guidance:
+            prompt_embeds = self._prepare_perturbed_attention_guidance(
+                prompt_embeds, negative_prompt_embeds, self.do_classifier_free_guidance
+            )
+        elif self.do_classifier_free_guidance:
+            prompt_embeds = torch.cat([negative_prompt_embeds, prompt_embeds])
+
 
         prompt_embeds = prompt_embeds.to(device)
 
         controlnet_prompt_embeds = prompt_embeds
+
 
         # 8. Denoising loop
         num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
