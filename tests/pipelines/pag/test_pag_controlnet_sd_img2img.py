@@ -207,3 +207,55 @@ class StableDiffusionControlNetPAGImg2ImgPipelineFastTests(
 
         assert np.abs(out.flatten() - out_pag_disabled.flatten()).max() < 1e-3
         assert np.abs(out.flatten() - out_pag_enabled.flatten()).max() > 1e-3
+
+    def test_pag_cfg(self):
+        device = "cpu"  # ensure determinism for the device-dependent torch.Generator
+        components = self.get_dummy_components()
+
+        pipe_pag = self.pipeline_class(**components, pag_applied_layers=["mid", "up", "down"])
+        pipe_pag = pipe_pag.to(device)
+        pipe_pag.set_progress_bar_config(disable=None)
+
+        inputs = self.get_dummy_inputs(device)
+        image = pipe_pag(**inputs).images
+        image_slice = image[0, -3:, -3:, -1]
+
+        assert image.shape == (
+            1,
+            64,
+            64,
+            3,
+        ), f"the shape of the output image should be (1, 64, 64, 3) but got {image.shape}"
+        expected_slice = np.array(
+            [0.5562928, 0.44882968, 0.4588066, 0.63200223, 0.5694165, 0.4955688, 0.6126959, 0.57588536, 0.43827885]
+        )
+
+        max_diff = np.abs(image_slice.flatten() - expected_slice).max()
+        assert max_diff < 1e-3, f"output is different from expected, {image_slice.flatten()}"
+
+    def test_pag_uncond(self):
+        device = "cpu"  # ensure determinism for the device-dependent torch.Generator
+        components = self.get_dummy_components()
+
+        pipe_pag = self.pipeline_class(**components, pag_applied_layers=["mid", "up", "down"])
+        pipe_pag = pipe_pag.to(device)
+        pipe_pag.set_progress_bar_config(disable=None)
+
+        inputs = self.get_dummy_inputs(device)
+        inputs["guidance_scale"] = 0.0
+        image = pipe_pag(**inputs).images
+        image_slice = image[0, -3:, -3:, -1]
+
+        assert image.shape == (
+            1,
+            64,
+            64,
+            3,
+        ), f"the shape of the output image should be (1, 64, 64, 3) but got {image.shape}"
+        expected_slice = np.array(
+            [0.5543988, 0.45614323, 0.4665692, 0.6202247, 0.5598917, 0.49621183, 0.6084159, 0.5722314, 0.43945464]
+        )
+
+        max_diff = np.abs(image_slice.flatten() - expected_slice).max()
+        assert max_diff < 1e-3, f"output is different from expected, {image_slice.flatten()}"
+
