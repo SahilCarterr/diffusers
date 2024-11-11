@@ -1148,6 +1148,13 @@ class StableDiffusionControlNetPAGImg2ImgPipeline(
             lora_scale=text_encoder_lora_scale,
             clip_skip=self.clip_skip,
         )
+        
+        if self.do_perturbed_attention_guidance:
+            prompt_embeds = self._prepare_perturbed_attention_guidance(
+                prompt_embeds, negative_prompt_embeds, self.do_classifier_free_guidance
+            )
+        elif self.do_classifier_free_guidance:
+            prompt_embeds = torch.cat([negative_prompt_embeds, prompt_embeds])
          # 3.2 Encode ip_adapter_image
         if ip_adapter_image is not None or ip_adapter_image_embeds is not None:
             ip_adapter_image_embeds = self.prepare_ip_adapter_image_embeds(
@@ -1157,6 +1164,25 @@ class StableDiffusionControlNetPAGImg2ImgPipeline(
                 batch_size * num_images_per_prompt,
                 self.do_classifier_free_guidance,
             )
+            for i, image_embeds in enumerate(ip_adapter_image_embeds):
+                negative_image_embeds = None
+                if self.do_classifier_free_guidance:
+                    negative_image_embeds, image_embeds = image_embeds.chunk(2)
+
+                if self.do_perturbed_attention_guidance:
+                    image_embeds = self._prepare_perturbed_attention_guidance(
+                        image_embeds, negative_image_embeds, self.do_classifier_free_guidance
+                    )
+                elif self.do_classifier_free_guidance:
+                    image_embeds = torch.cat([negative_image_embeds, image_embeds], dim=0)
+                image_embeds = image_embeds.to(device)
+                ip_adapter_image_embeds[i] = image_embeds
+        added_cond_kwargs = (
+            {"image_embeds": ip_adapter_image_embeds}
+            if ip_adapter_image is not None or ip_adapter_image_embeds is not None
+            else None
+        )
+
 
         # 4. Prepare image and controlnet_conditioning_image
         image = self.image_processor.preprocess(image, height=height, width=width).to(dtype=torch.float32)
@@ -1243,28 +1269,6 @@ class StableDiffusionControlNetPAGImg2ImgPipeline(
 
         control_image = control_images if isinstance(control_image, list) else control_images[0]
 
-        if ip_adapter_image_embeds is not None:
-            for i, image_embeds in enumerate(ip_adapter_image_embeds):
-                negative_image_embeds = None
-                if self.do_classifier_free_guidance:
-                    negative_image_embeds, image_embeds = image_embeds.chunk(2)
-
-                if self.do_perturbed_attention_guidance:
-                    image_embeds = self._prepare_perturbed_attention_guidance(
-                        image_embeds, negative_image_embeds, self.do_classifier_free_guidance
-                    )
-                elif self.do_classifier_free_guidance:
-                    image_embeds = torch.cat([negative_image_embeds, image_embeds], dim=0)
-                image_embeds = image_embeds.to(device)
-                ip_adapter_image_embeds[i] = image_embeds
-
-        if self.do_perturbed_attention_guidance:
-            prompt_embeds = self._prepare_perturbed_attention_guidance(
-                prompt_embeds, negative_prompt_embeds, self.do_classifier_free_guidance
-            )
-        elif self.do_classifier_free_guidance:
-            prompt_embeds = torch.cat([negative_prompt_embeds, prompt_embeds], dim=0)
-
         prompt_embeds = prompt_embeds.to(device)
 
         controlnet_prompt_embeds = prompt_embeds
@@ -1314,6 +1318,7 @@ class StableDiffusionControlNetPAGImg2ImgPipeline(
                     cross_attention_kwargs=self.cross_attention_kwargs,
                     down_block_additional_residuals=down_block_res_samples,
                     mid_block_additional_residual=mid_block_res_sample,
+                    added_cond_kwargs=added_cond_kwargs,
                     return_dict=False,
                 )[0]
 
