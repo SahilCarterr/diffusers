@@ -177,7 +177,7 @@ class StableDiffusionControlNetPAGImg2ImgPipelineFastTests(
         components = self.get_dummy_components()
 
         # base  pipeline (expect same output when pag is disabled)
-        pipe_sd = StableDiffusionControlNetImg2ImgPipeline(**components)
+        pipe_sd = StableDiffusionControlNetPipeline(**components)
         pipe_sd = pipe_sd.to(device)
         pipe_sd.set_progress_bar_config(disable=None)
 
