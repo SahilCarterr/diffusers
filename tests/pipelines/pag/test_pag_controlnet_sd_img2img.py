@@ -69,7 +69,7 @@ class StableDiffusionControlNetPAGImg2ImgPipelineFastTests(
     PipelineTesterMixin,
     unittest.TestCase,
 ):
-    pipeline_class = StableDiffusionControlNetImg2ImgPipeline
+    pipeline_class = StableDiffusionControlNetPAGImg2ImgPipeline
     params = TEXT_GUIDED_IMAGE_VARIATION_BATCH_PARAMS.union({"pag_scale", "pag_adaptive_scale"})
     batch_params = TEXT_GUIDED_IMAGE_VARIATION_BATCH_PARAMS
     image_params = IMAGE_TO_IMAGE_IMAGE_PARAMS.union({"control_image"})
@@ -227,7 +227,7 @@ class StableDiffusionControlNetPAGImg2ImgPipelineFastTests(
             3,
         ), f"the shape of the output image should be (1, 64, 64, 3) but got {image.shape}"
         expected_slice = np.array(
-            [0.5562928, 0.44882968, 0.4588066, 0.63200223, 0.5694165, 0.4955688, 0.6126959, 0.57588536, 0.43827885]
+            [0.40198064, 0.46560404, 0.32703918, 0.62231624, 0.522181, 0.41117966, 0.9138443, 0.81798613, 0.5898807]
         )
 
         max_diff = np.abs(image_slice.flatten() - expected_slice).max()
@@ -253,7 +253,7 @@ class StableDiffusionControlNetPAGImg2ImgPipelineFastTests(
             3,
         ), f"the shape of the output image should be (1, 64, 64, 3) but got {image.shape}"
         expected_slice = np.array(
-            [0.5543988, 0.45614323, 0.4665692, 0.6202247, 0.5598917, 0.49621183, 0.6084159, 0.5722314, 0.43945464]
+            [0.40198082, 0.46560413, 0.32703918, 0.6223163, 0.5221809, 0.4111796, 0.9138442, 0.817986, 0.5898805]
         )
 
         max_diff = np.abs(image_slice.flatten() - expected_slice).max()
