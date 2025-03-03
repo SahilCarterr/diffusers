@@ -2008,6 +2008,82 @@ def convert_sd3_transformer_checkpoint_to_diffusers(checkpoint, **kwargs):
 
     return converted_state_dict
 
+def convert_sana_transformer_checkpoint_to_diffusers(checkpoint, **kwargs):
+    converted_state_dict = {}
+    keys = list(checkpoint.keys())
+
+    for k in keys:
+        if "model.diffusion_model." in k:
+            checkpoint[k.replace("model.diffusion_model.", "")] = checkpoint.pop(k)
+
+
+    # Patch embeddings.
+    converted_state_dict["patch_embed.proj.weight"] = checkpoint.pop("x_embedder.proj.weight")
+    converted_state_dict["patch_embed.proj.bias"] = checkpoint.pop("x_embedder.proj.bias")
+
+    # Caption projection.
+    converted_state_dict["caption_projection.linear_1.weight"] = checkpoint.pop("y_embedder.y_proj.fc1.weight")
+    converted_state_dict["caption_projection.linear_1.bias"] = checkpoint.pop("y_embedder.y_proj.fc1.bias")
+    converted_state_dict["caption_projection.linear_2.weight"] = checkpoint.pop("y_embedder.y_proj.fc2.weight")
+    converted_state_dict["caption_projection.linear_2.bias"] = checkpoint.pop("y_embedder.y_proj.fc2.bias")
+
+    # AdaLN-single LN
+    converted_state_dict["time_embed.emb.timestep_embedder.linear_1.weight"] = checkpoint.pop("t_embedder.mlp.0.weight")
+    converted_state_dict["time_embed.emb.timestep_embedder.linear_1.bias"] = checkpoint.pop("t_embedder.mlp.0.bias")
+    converted_state_dict["time_embed.emb.timestep_embedder.linear_2.weight"] = checkpoint.pop("t_embedder.mlp.2.weight")
+    converted_state_dict["time_embed.emb.timestep_embedder.linear_2.bias"] = checkpoint.pop("t_embedder.mlp.2.bias")
+
+    # Shared norm.
+    converted_state_dict["time_embed.linear.weight"] = checkpoint.pop("t_block.1.weight")
+    converted_state_dict["time_embed.linear.bias"] = checkpoint.pop("t_block.1.bias")
+
+    # y norm
+    converted_state_dict["caption_norm.weight"] = checkpoint.pop("attention_y_norm.weight")
+
+    # Transformer blocks.
+    layer_num = len([key for key in checkpoint.keys() if "blocks" in key and "scale_shift_table" in key])
+    for depth in range(layer_num):
+        # Transformer blocks.
+        converted_state_dict[f"transformer_blocks.{depth}.scale_shift_table"] = checkpoint.pop(f"blocks.{depth}.scale_shift_table")
+
+        # Self attention.
+        q, k, v = torch.chunk(checkpoint.pop(f"blocks.{depth}.attn.qkv.weight"), 3, dim=0)
+        converted_state_dict[f"transformer_blocks.{depth}.attn1.to_q.weight"] = q
+        converted_state_dict[f"transformer_blocks.{depth}.attn1.to_k.weight"] = k
+        converted_state_dict[f"transformer_blocks.{depth}.attn1.to_v.weight"] = v
+        # Projection.
+        converted_state_dict[f"transformer_blocks.{depth}.attn1.to_out.0.weight"] = checkpoint.pop(f"blocks.{depth}.attn.proj.weight")
+        converted_state_dict[f"transformer_blocks.{depth}.attn1.to_out.0.bias"] = checkpoint.pop(f"blocks.{depth}.attn.proj.bias")
+
+        # Feed-forward.
+        converted_state_dict[f"transformer_blocks.{depth}.ff.conv_inverted.weight"] = checkpoint.pop(f"blocks.{depth}.mlp.inverted_conv.conv.weight")
+        converted_state_dict[f"transformer_blocks.{depth}.ff.conv_inverted.bias"] = checkpoint.pop(f"blocks.{depth}.mlp.inverted_conv.conv.bias")
+        converted_state_dict[f"transformer_blocks.{depth}.ff.conv_depth.weight"] = checkpoint.pop(f"blocks.{depth}.mlp.depth_conv.conv.weight")
+        converted_state_dict[f"transformer_blocks.{depth}.ff.conv_depth.bias"] = checkpoint.pop(f"blocks.{depth}.mlp.depth_conv.conv.bias")
+        converted_state_dict[f"transformer_blocks.{depth}.ff.conv_point.weight"] = checkpoint.pop(f"blocks.{depth}.mlp.point_conv.conv.weight")
+
+        # Cross-attention.
+        q = checkpoint.pop(f"blocks.{depth}.cross_attn.q_linear.weight")
+        q_bias = checkpoint.pop(f"blocks.{depth}.cross_attn.q_linear.bias")
+        k, v = torch.chunk(checkpoint.pop(f"blocks.{depth}.cross_attn.kv_linear.weight"), 2, dim=0)
+        k_bias, v_bias = torch.chunk(checkpoint.pop(f"blocks.{depth}.cross_attn.kv_linear.bias"), 2, dim=0)
+
+        converted_state_dict[f"transformer_blocks.{depth}.attn2.to_q.weight"] = q
+        converted_state_dict[f"transformer_blocks.{depth}.attn2.to_q.bias"] = q_bias
+        converted_state_dict[f"transformer_blocks.{depth}.attn2.to_k.weight"] = k
+        converted_state_dict[f"transformer_blocks.{depth}.attn2.to_k.bias"] = k_bias
+        converted_state_dict[f"transformer_blocks.{depth}.attn2.to_v.weight"] = v
+        converted_state_dict[f"transformer_blocks.{depth}.attn2.to_v.bias"] = v_bias
+
+        converted_state_dict[f"transformer_blocks.{depth}.attn2.to_out.0.weight"] = checkpoint.pop(f"blocks.{depth}.cross_attn.proj.weight")
+        converted_state_dict[f"transformer_blocks.{depth}.attn2.to_out.0.bias"] = checkpoint.pop(f"blocks.{depth}.cross_attn.proj.bias")
+
+    # Final block.
+    converted_state_dict["proj_out.weight"] = checkpoint.pop("final_layer.linear.weight")
+    converted_state_dict["proj_out.bias"] = checkpoint.pop("final_layer.linear.bias")
+    converted_state_dict["scale_shift_table"] = checkpoint.pop("final_layer.scale_shift_table")
+
+    return converted_state_dict
 
 def is_t5_in_single_file(checkpoint):
     if "text_encoders.t5xxl.transformer.shared.weight" in checkpoint:

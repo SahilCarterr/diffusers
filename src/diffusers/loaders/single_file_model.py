@@ -38,6 +38,7 @@ from .single_file_utils import (
     convert_lumina2_to_diffusers,
     convert_mochi_transformer_checkpoint_to_diffusers,
     convert_sd3_transformer_checkpoint_to_diffusers,
+    convert_sana_transformer_checkpoint_to_diffusers,
     convert_stable_cascade_unet_single_file_to_diffusers,
     create_controlnet_diffusers_config_from_ldm,
     create_unet_diffusers_config_from_ldm,
@@ -80,6 +81,10 @@ SINGLE_FILE_LOADABLE_CLASSES = {
     },
     "SD3Transformer2DModel": {
         "checkpoint_mapping_fn": convert_sd3_transformer_checkpoint_to_diffusers,
+        "default_subfolder": "transformer",
+    },
+    "SanaTransformer2DModel":{
+        "checkpoint_mapping_fn": convert_sana_transformer_checkpoint_to_diffusers,
         "default_subfolder": "transformer",
     },
     "MotionAdapter": {
