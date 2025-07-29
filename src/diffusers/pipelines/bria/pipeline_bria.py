@@ -239,7 +239,7 @@ class BriaPipeline(FluxPipeline):
             batch_size = prompt_embeds.shape[0]
 
         if prompt_embeds is None:
-            prompt_embeds = get_t5_prompt_embeds(
+            prompt_embeds = self.get_t5_prompt_embeds(
                 self.tokenizer,
                 self.text_encoder,
                 prompt=prompt,
@@ -249,7 +249,7 @@ class BriaPipeline(FluxPipeline):
             ).to(dtype=self.transformer.dtype)
 
         if do_classifier_free_guidance and negative_prompt_embeds is None:
-            if not is_ng_none(negative_prompt):
+            if not self.is_ng_none(negative_prompt):
                 negative_prompt = (
                     batch_size * [negative_prompt] if isinstance(negative_prompt, str) else negative_prompt
                 )
@@ -501,7 +501,7 @@ class BriaPipeline(FluxPipeline):
                     self.scheduler, num_inference_steps, device, None, None
                 )
             else:
-                sigmas = get_original_sigmas(
+                sigmas = self.get_original_sigmas(
                     num_train_timesteps=self.scheduler.config.num_train_timesteps,
                     num_inference_steps=num_inference_steps,
                 )
