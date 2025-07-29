@@ -11,7 +11,7 @@ from ...image_processor import VaeImageProcessor
 from ...loaders import FluxLoraLoaderMixin
 from ...models import AutoencoderKL, BriaTransformer2DModel
 from ...pipelines.flux.pipeline_flux import FluxPipeline, calculate_shift, retrieve_timesteps
-from ...pipelines.flux.pipeline_output import FluxPipelineOutput
+from .pipeline_output import BriaPipelineOutput
 from ...schedulers import (
     DDIMScheduler,
     EulerAncestralDiscreteScheduler,
