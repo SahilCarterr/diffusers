@@ -6,7 +6,7 @@ import torch.nn as nn
 
 from ...configuration_utils import ConfigMixin, register_to_config
 from ...loaders import FromOriginalModelMixin, PeftAdapterMixin
-from ...models.embeddings import TimestepEmbedding, get_timestep_embedding
+from ...models.embeddings import TimestepEmbedding, get_timestep_embedding, get_1d_rotary_pos_embed
 from ...models.modeling_utils import ModelMixin
 from ...models.modeling_outputs import Transformer2DModelOutput
 
