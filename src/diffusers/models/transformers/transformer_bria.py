@@ -7,7 +7,9 @@ import torch.nn as nn
 from ...configuration_utils import ConfigMixin, register_to_config
 from ...loaders import FromOriginalModelMixin, PeftAdapterMixin
 from ...models.embeddings import TimestepEmbedding, get_timestep_embedding
-from ...models.modeling_utils import ModelMixin, Transformer2DModelOutput
+from ...models.modeling_utils import ModelMixin
+from ...models.modeling_outputs import Transformer2DModelOutput
+
 from ...models.normalization import AdaLayerNormContinuous
 from ...models.transformers.transformer_flux import FluxSingleTransformerBlock, FluxTransformerBlock
 from ...utils import USE_PEFT_BACKEND, is_torch_version, logging, scale_lora_layers, unscale_lora_layers
