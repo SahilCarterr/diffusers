@@ -595,7 +595,7 @@ class BriaPipeline(FluxPipeline):
         if not return_dict:
             return (image,)
 
-        return FluxPipelineOutput(images=image)
+        return BriaPipelineOutput(images=image)
 
     def check_inputs(
         self,
