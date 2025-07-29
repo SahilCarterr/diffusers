@@ -143,6 +143,9 @@ else:
         "FluxKontextPipeline",
         "FluxKontextInpaintPipeline",
     ]
+    _import_structure["bria"] = [
+        "BriaPipeline",
+    ]
     _import_structure["audioldm"] = ["AudioLDMPipeline"]
     _import_structure["audioldm2"] = [
         "AudioLDM2Pipeline",
