@@ -9,7 +9,8 @@ from transformers import (
 
 from ...image_processor import VaeImageProcessor
 from ...loaders import FluxLoraLoaderMixin
-from ...models import AutoencoderKL, BriaTransformer2DModel
+from ...models import AutoencoderKL
+from ...models import BriaTransformer2DModel
 from ...pipelines.flux.pipeline_flux import FluxPipeline, calculate_shift, retrieve_timesteps
 from .pipeline_output import BriaPipelineOutput
 from ...schedulers import (
