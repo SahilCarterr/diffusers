@@ -266,7 +266,7 @@ class BriaPipeline(FluxPipeline):
                         " the batch size of `prompt`."
                     )
 
-                negative_prompt_embeds = get_t5_prompt_embeds(
+                negative_prompt_embeds = self.get_t5_prompt_embeds(
                     self.tokenizer,
                     self.text_encoder,
                     prompt=negative_prompt,
