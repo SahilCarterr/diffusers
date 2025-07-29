@@ -118,6 +118,7 @@ class BriaPipeline(FluxPipeline):
             self.vae.to(dtype=torch.float32)
 
     def get_t5_prompt_embeds(
+        self,
         tokenizer: T5TokenizerFast,
         text_encoder: T5EncoderModel,
         prompt: Union[str, List[str]] = None,
@@ -169,7 +170,7 @@ class BriaPipeline(FluxPipeline):
         return prompt_embeds
 
     # in order the get the same sigmas as in training and sample from them
-    def get_original_sigmas(num_train_timesteps=1000, num_inference_steps=1000):
+    def get_original_sigmas(self,num_train_timesteps=1000, num_inference_steps=1000):
         timesteps = np.linspace(1, num_train_timesteps, num_train_timesteps, dtype=np.float32)[::-1].copy()
         sigmas = timesteps / num_train_timesteps
 
@@ -177,7 +178,7 @@ class BriaPipeline(FluxPipeline):
         new_sigmas = sigmas[inds]
         return new_sigmas
 
-    def is_ng_none(negative_prompt):
+    def is_ng_none(self,negative_prompt):
         return (
             negative_prompt is None
             or negative_prompt == ""
